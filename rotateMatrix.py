@@ -223,7 +223,7 @@ def initVBO():
                 t[i*u + j]=GLfloat_3((i*u + j)/float(u*v),1.0-(i*u + j)/float(u*v),0.5)
         return t
     def grid_indeces(u=2, v=2):
-        t=(GLubyte * ((u-1)*(v-1)*6))()
+        t=[]#(GLubyte * ((u-1)*(v-1)*6))()
         for i in range(u-1):
             for j in range(v-1):
                 indexa = j * (u - 1) + i
@@ -235,27 +235,41 @@ def initVBO():
                 t[indexa * 6 + 3] = indexb
                 t[indexa * 6 + 4] = indexb + u
                 t[indexa * 6 + 5] = indexb + u + 1
-        return t
-    triangle = array2GL(GLfloat,[[-0.2, -0.4, 0.5],
-                                [-1.0, -0.8, 0.5],
-                                [-0.2, -0.8, 0.5],
-                                [0.7, 0.3, 1.0],
-                                [0.9, 0.5, 1.0],
-                                [0.9, 0.9, 1.0]])
+        return array.array('B',t)
+    triangle =  (c_float * 18)(*[-0.2, -0.4, 0.5,\
+                                -1.0, -0.8, 0.5,\
+                                -0.2, -0.8, 0.5,\
+                                0.7, 0.3, 1.0,\
+                                0.9, 0.5, 1.0,\
+                                0.9, 0.9, 1.0])
+    #VertexArray = array.array('f',triangle)
+    #array2GL(GLfloat,[[-0.2, -0.4, 0.5],
+               #                 [-1.0, -0.8, 0.5],
+               #                 [-0.2, -0.8, 0.5],
+               #                 [0.7, 0.3, 1.0],
+               #                 [0.9, 0.5, 1.0],
+               #                 [0.9, 0.9, 1.0]])
     #grid_verteces(3,3)#(GLfloat_3 * 6)(GLfloat_3(-0.2, -0.4, 0.5),
                #                        GLfloat_3(-1.0, -0.8, 0.5),
                #                        GLfloat_3(-0.2, -0.8, 0.5),
                #                        GLfloat_3(0.7, 0.3, 1.0),
                #                        GLfloat_3(0.9, 0.5, 1.0),
                #                        GLfloat_3(0.9, 0.9, 1.0))
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), array.array('f',triangle).tostring(), GL_STATIC_DRAW)
 
-    colors = array2GL(GLfloat,    [[0.5, 0.0, 0.0],
-                                    [0.5, 0.0, 0.0],
-                                    [0.5, 0.0, 0.0],
-                                    [1.0, 0.5, 0.0],
-                                    [1.0, 0.5, 0.0],
-                                    [1.0, 0.5, 0.0]])
+    colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
+                               0.5, 0.0, 0.0,\
+                               0.5, 0.0, 0.0,\
+                               1.0, 0.5, 0.0,\
+                               1.0, 0.5, 0.0,\
+                               1.0, 0.5, 0.0])
+    #ColorArray = array.array('f',colors)
+    #array2GL(GLfloat,    [[0.5, 0.0, 0.0],
+    #                                [0.5, 0.0, 0.0],
+    #                                [0.5, 0.0, 0.0],
+    #                                [1.0, 0.5, 0.0],
+    #                                [1.0, 0.5, 0.0],
+    #                                [1.0, 0.5, 0.0]])
     #grid_colors(3,3)
              #(GLfloat_3 * 6)(GLfloat_3(0.5, 0.0, 0.0),
              #                GLfloat_3(0.5, 0.0, 0.0),
@@ -265,15 +279,16 @@ def initVBO():
              #                GLfloat_3(1.0, 0.5, 0.0)
 			#				 )
     glBindBuffer(GL_ARRAY_BUFFER, ColorArray)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors),colors,GL_STATIC_DRAW)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
     #glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexArray)
     #indexes =array2GL(GLuint, [[0, 1, 2], [3, 4, 5]])
         #grid_indeces(3,3)#= (GLubyte * 6)(0, 1, 2,\
              #               3, 4, 5)
-    indexes = array.array('B', [0,1,2,3,4,5])
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexes, GL_STATIC_DRAW)
+    indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+    #IndexArray = array.array('B', indexes)
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), array.array('B', indexes).tostring(), GL_STATIC_DRAW)
     
     glBindVertexArray(vao)
     #glEnableVertexAttribArray(0)
@@ -337,7 +352,7 @@ def render():
     glVertexAttribPointer(VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
     #glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
 
-    glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, indexes)
+    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_BYTE, IndexArray.tostring())
     #glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
 
     glDisableVertexAttribArray(Attrib_vertex)
