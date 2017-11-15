@@ -264,25 +264,27 @@ def initVBO():
                                 0.7, 0.3, 1.0,\
                                 0.9, 0.5, 1.0,\
                                 0.9, 0.9, 1.0])
-    grid=(10,10)
-    triangle = grid_verteces(*grid)
+    triangle, indexes, colors = hexadron()
+    #grid=(10,10)
+    #triangle = grid_verteces(*grid)
     glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), array.array('f',triangle).tostring(), GL_STATIC_DRAW)
 
-    colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
-                               0.5, 0.0, 0.0,\
-                               0.5, 0.0, 0.0,\
-                               1.0, 0.5, 0.0,\
-                               1.0, 0.5, 0.0,\
-                               1.0, 0.5, 0.0])
-    colors = grid_colors(*grid)
+    ##colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
+    ##                           0.5, 0.0, 0.0,\
+    ##                           0.5, 0.0, 0.0,\
+    ##                           1.0, 0.5, 0.0,\
+    ##                           1.0, 0.5, 0.0,\
+    ##                           1.0, 0.5, 0.0])
+    #colors = grid_colors(*grid)
+    colors = array.array('f', colors).tostring()
     glBindBuffer(GL_ARRAY_BUFFER, ColorArray)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW)
     #glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexPointer)
 
-    indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
-    indexes = grid_indeces(*grid)
+    #indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+    #indexes = grid_indeces(*grid)
     indexesArray = array.array('B',indexes)
 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexesArray.tostring(), GL_STATIC_DRAW)
@@ -343,7 +345,7 @@ def render():
     glVertexAttribPointer(VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
     #glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
 
-    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_BYTE, indexesArray.tostring())
+    glDrawElements(GL_TRIANGLES, len(indexesArray), GL_UNSIGNED_BYTE, indexesArray.tostring())
     #glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
 
     glDisableVertexAttribArray(Attrib_vertex)
@@ -355,6 +357,58 @@ def render():
 
     glutSwapBuffers()
 
+def hexadron():
+    vertexes = [0, 0.6, 0.35    ,#/0
+    0.42, 0.42, 0.35 ,#/1
+    0.6, 0, 0.35     ,#2
+    0.42, -0.42, 0.35,#3
+    0, -0.6, 0.35    ,#4
+    -0.42, -0.42, 0.35,#/5
+    -0.6, 0, 0.35    ,#6
+    -0.42, 0.42, 0.35,#7
+    #***median_hexadron***//   
+    0, 1, 0        , #8
+    0.71, 0.71, 0  , #9
+    1, 0, 0        , #10
+    0.71, -0.7, 0  , #11
+    0,-1,0         , #12
+    -0.71, -0.71, 0, #13
+    -1, 0, 0       , #14
+    -0.71,0.71,0   , #15
+    #***bottom***//
+    0, 0, -0.65   ]  #16
+    indeces =[0,1,2,  2,7,3,  3,7,5,  3,4,5,  5,6,7,  7,0,2]
+    for i in range(1, 17): 
+        if (i > 8 and i<16):
+            #this.t.faces[i] = new int[3];
+            indeces+=[i-1,i,16]
+        if(i<8): 
+            #//this.t.faces[i] = new int[4];
+            indeces +=[i-1,i,i+7]
+            indeces +=[i-1,i+8,i+7]
+        if (i == 8):
+            indeces +=[ 7, 0, 15 ]
+            indeces +=[ 7, 8, 15 ]
+        if (i == 16):
+            indeces += [ 15, 8, 16 ]
+    colors = [1.0, 1.0, 1.0,#0
+              1.0, 1.0, 1.0,#1
+              1.0, 1.0, 1.0,#2
+              1.0, 1.0, 1.0,#3
+              1.0, 1.0, 1.0,#4
+              1.0, 1.0, 1.0,#5
+              1.0, 1.0, 1.0,#6
+              1.0, 1.0, 1.0,#7
+              0.7, 0.7, 1.0,#8
+              0.7, 0.7, 1.0,#9
+              0.7, 0.7, 1.0,#10
+              0.7, 0.7, 1.0,#11
+              0.7, 0.7, 1.0,#12
+              0.7, 0.7, 1.0,#13
+              0.7, 0.7, 1.0,#14
+              0.7, 0.7, 1.0,#15
+              0.9, 0.4, 1.0] #16
+    return vertexes, indeces, colors
 
 def main():
     glutInit(sys.argv)
