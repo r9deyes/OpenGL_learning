@@ -7,6 +7,7 @@ from ctypes import *
 import sys
 import time
 import array
+import transforms3d
 
 def sizeof(object):
     return sys.getsizeof(object)
@@ -24,29 +25,39 @@ Attrib_vertex = None
 ##//! ID юниформ переменной цвета
 VertexColor = None
 VBO = None
-IndexArray = None
-VertexArray = None
+IndexPointer = None
+VertexPointer = None
 vao = None
 vertex = GLfloat_2 * 3
 _color = GLfloat_4(1.0, 0.0, 0.0, 1.0)
 RotationMatrix = None
+indexesArray= None
 rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
                     [0.0, 1.0,0.0,0.0],
                     [0.0, 0.0, 1.0,0.0],
                     [0.0, 0.0, 0.0, 1.0]])
 
-angle = 0
+phi = 0
+psi = 0
 #rMatrix[0][0]=1.0
 
 indexes=None
 
 
+def _rotationMatrix(dphi, dpsi):
+    global phi,psi,rMatrix
+    phi = 0 if phi + dphi>360 else phi + dphi
+    psi = 0 if psi + dpsi>360 else psi + dpsi
+    ar = transforms3d.euler.euler2mat(np.radians(psi), 0.0, np.radians(phi))
+    res=np.array(rMatrix)
+    res[:3,:3] = ar
+    return array2GL(GLfloat, res)
 
-def rotationMatrix(theta):
-    global angle
-    angle = angle + theta
-    theta = 0 if angle > 360 else angle
-    angle = theta
+def rotationMatrix(theta,dpsi=0):
+    global phi
+    phi = phi + theta
+    theta = 0 if phi > 360 else phi
+    phi = theta
     theta = float(np.radians(theta))
     c, s = float(np.cos(theta)), float(np.sin(theta))
     R =array2GL(GLfloat, [[c, -s,0.0,0.0],
@@ -61,21 +72,25 @@ def specialKeys(key, x, y):
     global rMatrix
     # Обработчики специальных клавиш
     if key == GLUT_KEY_UP:  # Клавиша вверх
-        rMatrix=rotationMatrix(15) # rotate2D(rMatrix,15);
+        rMatrix=rotationMatrix(15,0) # rotate2D(rMatrix,15);
         return 0
-    if key == GLUT_KEY_DOWN:  # Клавиша вниз
-        rMatrix=rotationMatrix(-15) # rotate2D(rMatrix,15);
+    elif key == GLUT_KEY_DOWN:  # Клавиша вниз
+        rMatrix=rotationMatrix(-15,0) # rotate2D(rMatrix,15);
         return 0  # (rMatrix, -15);      # Вращаем на -5 градусов по оси X
-    if key == GLUT_KEY_LEFT:  # Клавиша влево
-        global angle
-        angle = 0
-        rMatrix = rotationMatrix(0)
-    if key == GLUT_KEY_RIGHT:  # Клавиша вправо
+    elif key == GLUT_KEY_LEFT:  # Клавиша влево
+        rMatrix = rotationMatrix(0,15)
+    elif key == GLUT_KEY_RIGHT:  # Клавиша вправо
+        rMatrix = rotationMatrix(0,-15)
         if _color[3] < 1.0:
             _color[3] += 0.17
         else:
             _color[3] = 0.0
-    print('_color:', _color[0:2])
+    elif key == GLUT_KEY_HOME or key == GLUT_KEY_END:
+        global phi,psi
+        phi, psi =0, 0
+        rMatrix = rotationMatrix(0 ,0)
+        print('reset')
+    #print('_color:', _color[0:2])
 
 
 ##//! Функция печати лога шейдера
@@ -198,17 +213,18 @@ void main()
 
 def initVBO():
     global VBO
-    global IndexArray
-    global VertexArray
+    global IndexPointer
+    global VertexPointer
     global vao
     global indexes
+    global indexesArray
 
     vao = glGenVertexArrays(1)
     VBO = glGenBuffers(3)
-    IndexArray = VBO[0]
-    VertexArray = VBO[1]
+    IndexPointer = VBO[0]
+    VertexPointer = VBO[1]
     ColorArray = VBO[2]
-    glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
+    glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
     def grid_verteces(u=2,v=2):
         t=(GLfloat_3 * (v*u))()
@@ -236,12 +252,13 @@ def initVBO():
                 t[indexa * 6 + 4] = indexb + u
                 t[indexa * 6 + 5] = indexb + u + 1
         return array.array('B',t)
-    triangle =  (c_float * 18)(*[-0.2, -0.4, 0.5,\
+    triangle =  (c_float * 18)(*(map(lambda x: x*0.5,\
+                                [-0.2, -0.4, 0.5,\
                                 -1.0, -0.8, 0.5,\
                                 -0.2, -0.8, 0.5,\
                                 0.7, 0.3, 1.0,\
                                 0.9, 0.5, 1.0,\
-                                0.9, 0.9, 1.0])
+                                0.9, 0.9, 1.0])))
     #VertexArray = array.array('f',triangle)
     #array2GL(GLfloat,[[-0.2, -0.4, 0.5],
                #                 [-1.0, -0.8, 0.5],
@@ -282,17 +299,18 @@ def initVBO():
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
     #glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexArray)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexPointer)
     #indexes =array2GL(GLuint, [[0, 1, 2], [3, 4, 5]])
         #grid_indeces(3,3)#= (GLubyte * 6)(0, 1, 2,\
              #               3, 4, 5)
     indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+    indexesArray = array.array('B',indexes)
     #IndexArray = array.array('B', indexes)
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), array.array('B', indexes).tostring(), GL_STATIC_DRAW)
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexesArray.tostring(), GL_STATIC_DRAW)
     
     glBindVertexArray(vao)
     #glEnableVertexAttribArray(0)
-    glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
+    glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
     # glEnableVertexAttribArray(1)
     # glBindBuffer(GL_ARRAY_BUFFER,ColorArray)
@@ -329,13 +347,14 @@ def render():
     global Program
     global VertexColor;
     global VBO
-    global VertexArray
-    global IndexArray
+    global VertexPointer
+    global IndexPointer
     global Attrib_vertex
     global _color
     global RotationMatrix
     global rMatrix
     global indexes
+    global indexesArray
     glClear(GL_COLOR_BUFFER_BIT)
     # //! Устанавливаем шейдерную программу текущей
     glUseProgram(Program)
@@ -352,7 +371,7 @@ def render():
     glVertexAttribPointer(VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
     #glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
 
-    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_BYTE, IndexArray.tostring())
+    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_BYTE, indexesArray.tostring())
     #glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
 
     glDisableVertexAttribArray(Attrib_vertex)
