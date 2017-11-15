@@ -10,7 +10,8 @@ import array
 import transforms3d
 
 def sizeof(object):
-    return sys.getsizeof(object)
+    #return sys.getsizeof(object)
+    return object.__sizeof__()
 
 def array2GL(GLtype, array):
     c = len(array)
@@ -39,21 +40,23 @@ rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
 
 phi = 0
 psi = 0
+theta = 0
 #rMatrix[0][0]=1.0
 
 indexes=None
 
 
-def _rotationMatrix(dphi, dpsi):
-    global phi,psi,rMatrix
+def rotationMatrix(dphi, dpsi=0,dtheta=0):
+    global phi,psi,theta,rMatrix
     phi = 0 if phi + dphi>360 else phi + dphi
     psi = 0 if psi + dpsi>360 else psi + dpsi
-    ar = transforms3d.euler.euler2mat(np.radians(psi), 0.0, np.radians(phi))
+    theta = 0 if theta + dtheta>360 else theta + dtheta
+    ar = transforms3d.euler.euler2mat(np.radians(theta), np.radians(psi), np.radians(phi))
     res=np.array(rMatrix)
     res[:3,:3] = ar
     return array2GL(GLfloat, res)
 
-def rotationMatrix(theta,dpsi=0):
+def _rotationMatrix(theta,dpsi=0):
     global phi
     phi = phi + theta
     theta = 0 if phi > 360 else phi
@@ -72,24 +75,23 @@ def specialKeys(key, x, y):
     global rMatrix
     # Обработчики специальных клавиш
     if key == GLUT_KEY_UP:  # Клавиша вверх
-        rMatrix=rotationMatrix(15,0) # rotate2D(rMatrix,15);
-        return 0
-    elif key == GLUT_KEY_DOWN:  # Клавиша вниз
-        rMatrix=rotationMatrix(-15,0) # rotate2D(rMatrix,15);
-        return 0  # (rMatrix, -15);      # Вращаем на -5 градусов по оси X
-    elif key == GLUT_KEY_LEFT:  # Клавиша влево
-        rMatrix = rotationMatrix(0,15)
-    elif key == GLUT_KEY_RIGHT:  # Клавиша вправо
-        rMatrix = rotationMatrix(0,-15)
-        if _color[3] < 1.0:
-            _color[3] += 0.17
-        else:
-            _color[3] = 0.0
-    elif key == GLUT_KEY_HOME or key == GLUT_KEY_END:
-        global phi,psi
-        phi, psi =0, 0
-        rMatrix = rotationMatrix(0 ,0)
+        rMatrix=rotationMatrix(9,0) # rotate2D(rMatrix,15);
+    if key == GLUT_KEY_DOWN:  # Клавиша вниз
+        rMatrix=rotationMatrix(-9,0) # rotate2D(rMatrix,15);
+    if key == GLUT_KEY_LEFT:  # Клавиша влево
+        rMatrix = rotationMatrix(0,9)
+    if key == GLUT_KEY_RIGHT:  # Клавиша вправо
+        rMatrix = rotationMatrix(0,-9)
+    if key == GLUT_KEY_PAGE_DOWN:  # Клавиша вправо
+        rMatrix = rotationMatrix(0,0,-9)
+    if key == GLUT_KEY_PAGE_UP:  # Клавиша вправо
+        rMatrix = rotationMatrix(0,0,9)
+    if key == GLUT_KEY_HOME or key == GLUT_KEY_END:
+        global phi,psi,theta
+        phi, psi, theta =0, 0, 0
+        rMatrix = rotationMatrix(0 ,0,0)
         print('reset')
+        return 0
     #print('_color:', _color[0:2])
 
 
@@ -227,19 +229,23 @@ def initVBO():
     glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
     def grid_verteces(u=2,v=2):
-        t=(GLfloat_3 * (v*u))()
+        t=(c_float * (v*u*3))()
         for i in range(u):
-            for j in range(v):
-                t[i*u + j] = GLfloat_3(i/float(u), j/float(v), 1.0)
+            for j in range(0,v*3,3):
+                t[i*u + j] = c_float(i/float(u))
+                t[i*u + j+1]=c_float(j/float(v))
+                t[i*u + j+2]=c_float(0.5)
         return t
     def grid_colors(u=2,v=2):
-        t=(GLfloat_3 * (v*u))()
+        t=(c_float * (v*u*3))()
         for i in range(u):
-            for j in range(v):
-                t[i*u + j]=GLfloat_3((i*u + j)/float(u*v),1.0-(i*u + j)/float(u*v),0.5)
+            for j in range(0,v*3,3):
+                t[i*u + j] = c_float((i*u + j)/float(u*v))
+                t[i*u + j+1]=c_float(1.0-(i*u + j)/float(u*v))
+                t[i*u + j+2]=c_float(0.5)
         return t
     def grid_indeces(u=2, v=2):
-        t=[]#(GLubyte * ((u-1)*(v-1)*6))()
+        t=(c_ubyte * ((u-1)*(v-1)*6))()
         for i in range(u-1):
             for j in range(v-1):
                 indexa = j * (u - 1) + i
@@ -251,27 +257,15 @@ def initVBO():
                 t[indexa * 6 + 3] = indexb
                 t[indexa * 6 + 4] = indexb + u
                 t[indexa * 6 + 5] = indexb + u + 1
-        return array.array('B',t)
-    triangle =  (c_float * 18)(*(map(lambda x: x*0.5,\
-                                [-0.2, -0.4, 0.5,\
+        return t
+    triangle =  (c_float * 18)(*[-0.2, -0.4, 0.5,\
                                 -1.0, -0.8, 0.5,\
                                 -0.2, -0.8, 0.5,\
                                 0.7, 0.3, 1.0,\
                                 0.9, 0.5, 1.0,\
-                                0.9, 0.9, 1.0])))
-    #VertexArray = array.array('f',triangle)
-    #array2GL(GLfloat,[[-0.2, -0.4, 0.5],
-               #                 [-1.0, -0.8, 0.5],
-               #                 [-0.2, -0.8, 0.5],
-               #                 [0.7, 0.3, 1.0],
-               #                 [0.9, 0.5, 1.0],
-               #                 [0.9, 0.9, 1.0]])
-    #grid_verteces(3,3)#(GLfloat_3 * 6)(GLfloat_3(-0.2, -0.4, 0.5),
-               #                        GLfloat_3(-1.0, -0.8, 0.5),
-               #                        GLfloat_3(-0.2, -0.8, 0.5),
-               #                        GLfloat_3(0.7, 0.3, 1.0),
-               #                        GLfloat_3(0.9, 0.5, 1.0),
-               #                        GLfloat_3(0.9, 0.9, 1.0))
+                                0.9, 0.9, 1.0])
+    grid=(10,10)
+    triangle = grid_verteces(*grid)
     glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), array.array('f',triangle).tostring(), GL_STATIC_DRAW)
 
     colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
@@ -280,44 +274,22 @@ def initVBO():
                                1.0, 0.5, 0.0,\
                                1.0, 0.5, 0.0,\
                                1.0, 0.5, 0.0])
-    #ColorArray = array.array('f',colors)
-    #array2GL(GLfloat,    [[0.5, 0.0, 0.0],
-    #                                [0.5, 0.0, 0.0],
-    #                                [0.5, 0.0, 0.0],
-    #                                [1.0, 0.5, 0.0],
-    #                                [1.0, 0.5, 0.0],
-    #                                [1.0, 0.5, 0.0]])
-    #grid_colors(3,3)
-             #(GLfloat_3 * 6)(GLfloat_3(0.5, 0.0, 0.0),
-             #                GLfloat_3(0.5, 0.0, 0.0),
-             #                GLfloat_3(0.5, 0.0, 0.0),
-             #                GLfloat_3(1.0, 0.5, 0.0),
-             #                GLfloat_3(1.0, 0.5, 0.0),
-             #                GLfloat_3(1.0, 0.5, 0.0)
-			#				 )
+    colors = grid_colors(*grid)
     glBindBuffer(GL_ARRAY_BUFFER, ColorArray)
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
     #glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexPointer)
-    #indexes =array2GL(GLuint, [[0, 1, 2], [3, 4, 5]])
-        #grid_indeces(3,3)#= (GLubyte * 6)(0, 1, 2,\
-             #               3, 4, 5)
+
     indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+    indexes = grid_indeces(*grid)
     indexesArray = array.array('B',indexes)
-    #IndexArray = array.array('B', indexes)
+
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexesArray.tostring(), GL_STATIC_DRAW)
     
     glBindVertexArray(vao)
-    #glEnableVertexAttribArray(0)
-    glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
-    # glEnableVertexAttribArray(1)
-    # glBindBuffer(GL_ARRAY_BUFFER,ColorArray)
-    #
-    # colors = (GLfloat_4 * 6)(GLfloat_4(1.0,0.0,0.0,1.0), GLfloat_4(1.0, 0.0, 0.0, 1.0), GLfloat_4(1.0, 0.0, 0.0, 1.0),
-    #                          GLfloat_4(1.0, 1.0, 0.0, 1.0), GLfloat_4(1.0, 1.0, 0.0, 1.0),GLfloat_4(1.0, 1.0, 0.0, 1.0))
-    # glBufferData(GL_ARRAY_BUFFER,sizeof(colors),colors,GL_STATIC_DRAW)
+    glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
     checkOpenGLerror()
 
