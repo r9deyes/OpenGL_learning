@@ -8,6 +8,7 @@ import sys
 import time
 import array
 import transforms3d
+from OpenGL_tools import *
 
 def sizeof(object):
     #return sys.getsizeof(object)
@@ -135,7 +136,7 @@ out vec4 Color;
 uniform mat4 RotationMatrix;
 void main()
 {
-    Color = vec4(VertexColor,1.0); //vec4(1.0,0.0,0.0,1.0);
+    Color = vec4(VertexColor, 1.0);//*0.5 + vec4(1.0, 1.0, 1.0, 1.0);
     gl_Position=  RotationMatrix * vec4(VertexPosition,1.0);
 }"""
 
@@ -220,44 +221,15 @@ def initVBO():
     global vao
     global indexes
     global indexesArray
+    global ColorPointer
 
     vao = glGenVertexArrays(1)
     VBO = glGenBuffers(3)
     IndexPointer = VBO[0]
     VertexPointer = VBO[1]
-    ColorArray = VBO[2]
+    ColorPointer = VBO[2]
     glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
 
-    def grid_verteces(u=2,v=2):
-        t=(c_float * (v*u*3))()
-        for i in range(u):
-            for j in range(0,v*3,3):
-                t[i*u + j] = c_float(i/float(u))
-                t[i*u + j+1]=c_float(j/float(v))
-                t[i*u + j+2]=c_float(0.5)
-        return t
-    def grid_colors(u=2,v=2):
-        t=(c_float * (v*u*3))()
-        for i in range(u):
-            for j in range(0,v*3,3):
-                t[i*u + j] = c_float((i*u + j)/float(u*v))
-                t[i*u + j+1]=c_float(1.0-(i*u + j)/float(u*v))
-                t[i*u + j+2]=c_float(0.5)
-        return t
-    def grid_indeces(u=2, v=2):
-        t=(c_ubyte * ((u-1)*(v-1)*6))()
-        for i in range(u-1):
-            for j in range(v-1):
-                indexa = j * (u - 1) + i
-                indexb = j * u + i
-                t[indexa * 6 + 0] = indexb
-                t[indexa * 6 + 1] = indexb + 1 + u
-                t[indexa * 6 + 2] = indexb + 1
-
-                t[indexa * 6 + 3] = indexb
-                t[indexa * 6 + 4] = indexb + u
-                t[indexa * 6 + 5] = indexb + u + 1
-        return t
     triangle =  (c_float * 18)(*[-0.2, -0.4, 0.5,\
                                 -1.0, -0.8, 0.5,\
                                 -0.2, -0.8, 0.5,\
@@ -276,9 +248,8 @@ def initVBO():
     ##                           1.0, 0.5, 0.0,\
     ##                           1.0, 0.5, 0.0])
     #colors = grid_colors(*grid)
-    colors = array.array('f', colors).tostring()
-    glBindBuffer(GL_ARRAY_BUFFER, ColorArray)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW)
+    glBindBuffer(GL_ARRAY_BUFFER, ColorPointer)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
     #glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexPointer)
@@ -319,9 +290,9 @@ def resizeWindow(width, height):
 # //! Отрисовка
 def render():
     global Program
-    global VertexColor;
-    global VBO
+    global VertexColor
     global VertexPointer
+    global ColorPointer
     global IndexPointer
     global Attrib_vertex
     global _color
@@ -338,17 +309,19 @@ def render():
     glUniformMatrix4fv(RotationMatrix, GLint(1), GL_FALSE, rMatrix)
     # //! Включаем массив атрибутов
     glEnableVertexAttribArray(Attrib_vertex)
-
-    ##VBO.bind();
+    glBindBuffer(GL_ARRAY_BUFFER, VertexPointer)
     glVertexAttribPointer(Attrib_vertex, 3, GL_FLOAT, GL_FALSE, 0, None)
+
     glEnableVertexAttribArray(VertexColor)
+    glBindBuffer(GL_ARRAY_BUFFER, ColorPointer)
     glVertexAttribPointer(VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
     #glBindBuffer(GL_ARRAY_BUFFER, VertexArray)
-
+    #glPolygonMode(GL_FRONT, GL_LINE)
     glDrawElements(GL_TRIANGLES, len(indexesArray), GL_UNSIGNED_BYTE, indexesArray.tostring())
     #glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
-
     glDisableVertexAttribArray(Attrib_vertex)
+    glDisableVertexAttribArray(VertexColor)
+
 
     # //! Отключаем шейдерную программу
     glUseProgram(0)
@@ -384,14 +357,14 @@ def hexadron():
             indeces+=[i-1,i,16]
         if(i<8): 
             #//this.t.faces[i] = new int[4];
-            indeces +=[i-1,i,i+7]
-            indeces +=[i-1,i+8,i+7]
+            indeces +=[i,i-1,i+7]
+            indeces +=[i+8,i-1,i+7]
         if (i == 8):
             indeces +=[ 7, 0, 15 ]
             indeces +=[ 7, 8, 15 ]
         if (i == 16):
             indeces += [ 15, 8, 16 ]
-    colors = [1.0, 1.0, 1.0,#0
+    colors = [1.0, 1.0, 1.0, #0
               1.0, 1.0, 1.0,#1
               1.0, 1.0, 1.0,#2
               1.0, 1.0, 1.0,#3
@@ -409,6 +382,39 @@ def hexadron():
               0.7, 0.7, 1.0,#15
               0.9, 0.4, 1.0] #16
     return vertexes, indeces, colors
+    
+def landscape(u=2,v=2):
+    def grid_verteces(u=2,v=2):
+        t=(c_float * (v*u*3))()
+        for i in range(u):
+            for j in range(0,v*3,3):
+                t[i*u + j] = c_float(i/float(u))
+                t[i*u + j+1]=c_float(j/float(v))
+                t[i*u + j+2]=c_float(0.5)
+        return t
+    def grid_colors(u=2,v=2):
+        t=(c_float * (v*u*3))()
+        for i in range(u):
+            for j in range(0,v*3,3):
+                t[i*u + j] = c_float((i*u + j)/float(u*v))
+                t[i*u + j+1]=c_float(1.0-(i*u + j)/float(u*v))
+                t[i*u + j+2]=c_float(0.5)
+        return t
+    def grid_indeces(u=2, v=2):
+        t=(c_ubyte * ((u-1)*(v-1)*6))()
+        for i in range(u-1):
+            for j in range(v-1):
+                indexa = j * (u - 1) + i
+                indexb = j * u + i
+                t[indexa * 6 + 0] = indexb
+                t[indexa * 6 + 1] = indexb + 1 + u
+                t[indexa * 6 + 2] = indexb + 1
+
+                t[indexa * 6 + 3] = indexb
+                t[indexa * 6 + 4] = indexb + u
+                t[indexa * 6 + 5] = indexb + u + 1
+        return t
+    return grid_verteces(u,v), grid_indeces(u,v), grid_colors(u,v)
 
 def main():
     glutInit(sys.argv)
