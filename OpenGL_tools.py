@@ -16,8 +16,10 @@ class LightInfo:
 	
 	def export(s,f_export,varName):
 		for n in s.__dict__.keys():
-			i=glGetUniformLocation(Program,varName+'.'+n)
-			glUniform3fv(i,1,s.__dict__[n])
+			s.__dict__[n] = f_export(varName+'.'+n)
+			#i=glGetUniformLocation(Program,varName+'.'+n)
+			#glUniform3fv(i,1,s.__dict__[n])
+
 class MaterialInfo:
 	shininess=None
 	Ka = None
@@ -31,7 +33,7 @@ class MaterialInfo:
 	
 	def export(s,f_export,varName):
 		for n in s.__dict__.keys():
-			f_export(varName+'.'+n)
+			s.__dict__[n] = f_export(varName+'.'+n)
 
 def landscape(u=2,v=2):
 	def grid_verteces(u=2,v=2):
