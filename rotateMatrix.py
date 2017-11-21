@@ -93,7 +93,15 @@ def specialKeys(key, x, y):
         rMatrix = rotationMatrix(0 ,0,0)
         print('reset')
         return 0
-    #print('_color:', _color[0:2])
+def keys(key, x, y):
+    if (key == 'i'):
+        return 0
+    if (key == 'j'):
+        return 0
+    if (key == 'k'):
+        return 0
+    if (key == 'l'):
+        return 0
 
 
 ##//! Функция печати лога шейдера
@@ -236,17 +244,17 @@ def initVBO():
                                 0.7, 0.3, 1.0,\
                                 0.9, 0.5, 1.0,\
                                 0.9, 0.9, 1.0])
-    triangle, indexes, colors = hexadron()
+    #triangle, indexes, colors = hexadron()
     #grid=(10,10)
     #triangle = grid_verteces(*grid)
     glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), array.array('f',triangle).tostring(), GL_STATIC_DRAW)
 
-    ##colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
-    ##                           0.5, 0.0, 0.0,\
-    ##                           0.5, 0.0, 0.0,\
-    ##                           1.0, 0.5, 0.0,\
-    ##                           1.0, 0.5, 0.0,\
-    ##                           1.0, 0.5, 0.0])
+    colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
+                               0.5, 0.0, 0.0,\
+                               0.5, 0.0, 0.0,\
+                               1.0, 0.5, 0.0,\
+                               1.0, 0.5, 0.0,\
+                               1.0, 0.5, 0.0])
     #colors = grid_colors(*grid)
     glBindBuffer(GL_ARRAY_BUFFER, ColorPointer)
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), array.array('f', colors).tostring(), GL_STATIC_DRAW)
@@ -254,7 +262,7 @@ def initVBO():
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexPointer)
 
-    #indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+    indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
     #indexes = grid_indeces(*grid)
     indexesArray = array.array('B',indexes)
 
@@ -291,17 +299,12 @@ def resizeWindow(width, height):
 def render():
     global Program
     global VertexColor
-    global VertexPointer
-    global ColorPointer
-    global IndexPointer
-    global Attrib_vertex
-    global _color
-    global RotationMatrix
+    global VertexPointer, ColorPointer, IndexPointer
+    global Attrib_vertex, _color, RotationMatrix
     global rMatrix
     global indexes
     global indexesArray
     glClear(GL_COLOR_BUFFER_BIT)
-    # //! Устанавливаем шейдерную программу текущей
     glUseProgram(Program)
 
     # //! Передаем юниформ в шейдер
@@ -446,7 +449,7 @@ def main():
     glutIdleFunc(render)
 
     glutSpecialFunc(specialKeys)
-
+    glutKeyboardFunc(keys)
     glutMainLoop()
 
     # //! Освобождение ресурсов

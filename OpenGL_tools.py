@@ -1,6 +1,8 @@
 # OpenGL tools
 import numpy as np
 from OpenGL.GL import *
+import transforms3d
+
 class LightInfo:
 	Position=None
 	La = None
@@ -66,7 +68,7 @@ def landscape(u=2,v=2):
 
 def load_obj(filename):
 	"""
-		return verteces, elements, normals
+		return vertices, elements, normals
 	"""
 	with open(filename) as f:
 		line=f.readline()
@@ -76,32 +78,30 @@ def load_obj(filename):
 		while (line):
 			if (line[0:2] == "v "):
 				v= line[2:].split()
-				verteces += [float(v[0]), float(v[1]), float(v[2]), 1.0]
+				vertices += [float(v[0]), float(v[1]), float(v[2])]
 			elif (line[0:2] == "f "):
 				v= line[2:].split()
-				elements += [int(v[0])-1, int(v[1])-1, int(v[2])-1]
+				elements += [int(v[0].split('/')[0])-1, int(v[1].split('/')[0])-1, int(v[2].split('/')[0])-1]
 			elif (line[0:3] == 'vn '):
 				v= line[3:].split()
-				normals += [float(v[0]), float(v[1]), float(v[2]), 1.0]
+				normals += [float(v[0]), float(v[1]), float(v[2])]
 			elif (line[0] == '#'):
-			{
-				#/* ignoring this line */
-			}
+				line=f.readline()
+				continue #/* ignoring this line */
 			else:
-			{
-				#/* ignoring this line */
-			}
+				line=f.readline()
+				continue #/* ignoring this line */
 			line=f.readline()
-		if (len(normals)<len(verteces)):
+		if (len(normals)<len(vertices)):
 			for i in range(0,len(elements),3):
-				ia = elements[i  ]*4
-				ib = elements[i+1]*4
-				ic = elements[i+2]*4
+				ia = elements[i  ]*3
+				ib = elements[i+1]*3
+				ic = elements[i+2]*3
 				normal = normalize(np.cross(\
 				(vertices[ib] - vertices[ia],vertices[ib+1] - vertices[ia+1],vertices[ib+2] - vertices[ia+2]),\
 				(vertices[ic] - vertices[ia],vertices[ic+1] - vertices[ia+1],vertices[ic+2] - vertices[ia+2])))
 				normals[ia] = normals[ib] = normals[ic] = normal
-	return verteces, elements, normals
+	return vertices, elements, normals
 
 def normalize(v):
 	norm = np.linalg.norm(v)
@@ -161,3 +161,43 @@ def hexadron():
 			  0.7, 0.7, 1.0,#15
 			  0.9, 0.4, 1.0] #16
 	return vertexes, indeces, colors
+	
+def sizeof(object):
+	#return sys.getsizeof(object)
+	return object.__sizeof__()
+
+def array2GL(GLtype, array):
+	c = len(array)
+	c1 = len(array[0])
+	return ((GLtype * c1) * c)(*[(GLtype * c1)(*ar) for ar in array])
+
+class rotations:
+	phi, psi, theta = 0, 0, 0
+	rMatrix =  None
+	def __init__(self):
+		self.rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
+									[0.0, 1.0,0.0,0.0],
+									[0.0, 0.0, 1.0,0.0],
+									[0.0, 0.0, 0.0, 1.0]])
+		self.phi, self.psi, self.theta = 0, 0, 0
+	
+	def __call__(self,dphi, dpsi=0,dtheta=0):
+		self.phi = 0 if self.phi + dphi>360 else self.phi + dphi
+		self.psi = 0 if self.psi + dpsi>360 else self.psi + dpsi
+		self.theta = 0 if self.theta + dtheta>360 else self.theta + dtheta
+		ar = transforms3d.euler.euler2mat(np.radians(self.theta), np.radians(self.psi), np.radians(self.phi))
+		res=np.array(self.rMatrix)
+		res[:3,:3] = ar
+		return array2GL(GLfloat, res)
+	
+	def _rotationMatrix(theta,dpsi=0):
+		self.phi = self.phi + theta
+		theta = 0 if self.phi > 360 else self.phi
+		self.phi = theta
+		theta = float(np.radians(theta))
+		c, s = float(np.cos(theta)), float(np.sin(theta))
+		R =array2GL(GLfloat, [[c, -s,0.0,0.0],
+					[s, c,0.0,0.0],
+					[0.0,0.0,1.0,0.0],
+					[0.0,0.0,0.0,1.0]])
+		return R
