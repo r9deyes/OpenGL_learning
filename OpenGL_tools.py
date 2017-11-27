@@ -2,6 +2,7 @@
 import numpy as np
 from OpenGL.GL import *
 import transforms3d
+from glm.detail import type_mat4x4
 
 class LightInfo:
 	Position=None
@@ -238,3 +239,5 @@ class rotations:
 					[0.0,0.0,1.0,0.0],
 					[0.0,0.0,0.0,1.0]])
 		return R
+if __name__=="__main__":
+     scale(Mat4x4(1),3)
