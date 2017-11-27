@@ -1,9 +1,7 @@
 # OpenGL tools
 import numpy as np
 from OpenGL.GL import *
-import transforms3d
-from glm.detail import type_mat4x4
-
+import glm
 class LightInfo:
 	Position=None
 	La = None
@@ -174,70 +172,70 @@ def array2GL(GLtype, array):
 	c1 = len(array[0])
 	return ((GLtype * c1) * c)(*[(GLtype * c1)(*ar) for ar in array])
 
-def lookAt(matrix, eyePosition3D, center3D, upVector3D):
-	matrix2 = np.matrix([[1.0, 0.0, 0.0, 0.0],
-						[0.0, 1.0,0.0,0.0],
-						[0.0, 0.0, 1.0,0.0],
-						[0.0, 0.0, 0.0, 1.0]])
-	
-	forward = np.array(center3D) - np.array(eyePosition3D)
-	
-	forward=normalize(forward)
-	side = np.cross(forward, upVector3D)
-	side=normalize(side)
-	
-	up = np.cross(side, forward)
-	matrix2[0,0], matrix2[1,0], matrix2[2,0], matrix2[3,0] = side[0], side[1], side[2], 0.0
-	matrix2[0,1], matrix2[1,1], matrix2[2,1], matrix2[3,1] = up[0], up[1], up[2], 0.0
-	matrix2[0,2], matrix2[1,2], matrix2[2,2], matrix2[3,2] = -forward[0], -forward[1], -forward[2], 0.0
-	matrix2[0,3] =matrix2[1,3]= matrix2[2,3]= matrix2[3,0] =0.0
-	matrix2[3,3]=1.0
-	
-	matrix2 =  [[side[0], side[1],side[2],-np.dot(side,eyePosition3D)],
-				[up[0], up[1], up[2], -np.dot(up,eyePosition3D)],
-				[-forward[0],-forward[1],-forward[2],-np.dot(forward,eyePosition3D)],
-				[0.0, 0.0, 0.0, 1.0]]
-	
-	return matrix2
+#def lookAt(matrix, eyePosition3D, center3D, upVector3D):
+#	matrix2 = np.matrix([[1.0, 0.0, 0.0, 0.0],
+#						[0.0, 1.0,0.0,0.0],
+#						[0.0, 0.0, 1.0,0.0],
+#						[0.0, 0.0, 0.0, 1.0]])
+#	
+#	forward = np.array(center3D) - np.array(eyePosition3D)
+#	
+#	forward=normalize(forward)
+#	side = np.cross(forward, upVector3D)
+#	side=normalize(side)
+#	
+#	up = np.cross(side, forward)
+#	matrix2[0,0], matrix2[1,0], matrix2[2,0], matrix2[3,0] = side[0], side[1], side[2], 0.0
+#	matrix2[0,1], matrix2[1,1], matrix2[2,1], matrix2[3,1] = up[0], up[1], up[2], 0.0
+#	matrix2[0,2], matrix2[1,2], matrix2[2,2], matrix2[3,2] = -forward[0], -forward[1], -forward[2], 0.0
+#	matrix2[0,3] =matrix2[1,3]= matrix2[2,3]= matrix2[3,0] =0.0
+#	matrix2[3,3]=1.0
+#	
+#	matrix2 =  [[side[0], side[1],side[2],-np.dot(side,eyePosition3D)],
+#				[up[0], up[1], up[2], -np.dot(up,eyePosition3D)],
+#				[-forward[0],-forward[1],-forward[2],-np.dot(forward,eyePosition3D)],
+#				[0.0, 0.0, 0.0, 1.0]]
+#	
+#	return matrix2
+#
+#def translate(matrix, vector, firstpos=np.array([0,0,0])):
+#	res = np.matrix(matrix.copy())
+#	for i in range(len(firstpos)):
+#		matrix[i,-1] = firstpos[i]
+#	return matrix * vector
+#	
+#def scale(matrix, coef):
+#	return matrix * coef
 
-def translate(matrix, vector, firstpos=np.array([0,0,0])):
-	res = np.matrix(matrix.copy())
-	for i in range(len(firstpos)):
-		matrix[i,-1] = firstpos[i]
-	return matrix * vector
-	
-def scale(matrix, coef):
-	return matrix * coef
-
-class rotations:
-	phi, psi, theta = 0, 0, 0
-	rMatrix =  None
-	def __init__(self):
-		self.rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
-									[0.0, 1.0,0.0,0.0],
-									[0.0, 0.0, 1.0,0.0],
-									[0.0, 0.0, 0.0, 1.0]])
-		self.phi, self.psi, self.theta = 0, 0, 0
-	
-	def __call__(self,dphi, dpsi=0,dtheta=0):
-		self.phi = 0 if self.phi + dphi>360 else self.phi + dphi
-		self.psi = 0 if self.psi + dpsi>360 else self.psi + dpsi
-		self.theta = 0 if self.theta + dtheta>360 else self.theta + dtheta
-		ar = transforms3d.euler.euler2mat(np.radians(self.theta), np.radians(self.psi), np.radians(self.phi))
-		res=np.array(self.rMatrix)
-		res[:3,:3] = ar
-		return array2GL(GLfloat, res)
-	
-	def _rotationMatrix(theta,dpsi=0):
-		self.phi = self.phi + theta
-		theta = 0 if self.phi > 360 else self.phi
-		self.phi = theta
-		theta = float(np.radians(theta))
-		c, s = float(np.cos(theta)), float(np.sin(theta))
-		R =array2GL(GLfloat, [[c, -s,0.0,0.0],
-					[s, c,0.0,0.0],
-					[0.0,0.0,1.0,0.0],
-					[0.0,0.0,0.0,1.0]])
-		return R
+#class rotations:
+#	phi, psi, theta = 0, 0, 0
+#	rMatrix =  None
+#	def __init__(self):
+#		self.rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
+#									[0.0, 1.0,0.0,0.0],
+#									[0.0, 0.0, 1.0,0.0],
+#									[0.0, 0.0, 0.0, 1.0]])
+#		self.phi, self.psi, self.theta = 0, 0, 0
+#	
+#	def __call__(self,dphi, dpsi=0,dtheta=0):
+#		self.phi = 0 if self.phi + dphi>360 else self.phi + dphi
+#		self.psi = 0 if self.psi + dpsi>360 else self.psi + dpsi
+#		self.theta = 0 if self.theta + dtheta>360 else self.theta + dtheta
+#		ar = transforms3d.euler.euler2mat(np.radians(self.theta), np.radians(self.psi), np.radians(self.phi))
+#		res=np.array(self.rMatrix)
+#		res[:3,:3] = ar
+#		return array2GL(GLfloat, res)
+#	
+#	def _rotationMatrix(theta,dpsi=0):
+#		self.phi = self.phi + theta
+#		theta = 0 if self.phi > 360 else self.phi
+#		self.phi = theta
+#		theta = float(np.radians(theta))
+#		c, s = float(np.cos(theta)), float(np.sin(theta))
+#		R =array2GL(GLfloat, [[c, -s,0.0,0.0],
+#					[s, c,0.0,0.0],
+#					[0.0,0.0,1.0,0.0],
+#					[0.0,0.0,0.0,1.0]])
+#		return R
 if __name__=="__main__":
-     scale(Mat4x4(1),3)
+	pass

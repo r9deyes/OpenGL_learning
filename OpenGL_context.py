@@ -5,9 +5,7 @@ from OpenGL.GLUT import *
 import numpy as np
 from ctypes import *
 import sys
-import time
 import array
-import transforms3d
 from OpenGL_tools import *
 
 class OpenGL_context:
@@ -19,49 +17,36 @@ class OpenGL_context:
 	VertexPointer = None
 	vao = None
 	vertex = GLfloat_2 * 3
-	RotationMatrix = None
 	indexesArray= None
-	rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
-						[0.0, 1.0,0.0,0.0],
-						[0.0, 0.0, 1.0,0.0],
-						[0.0, 0.0, 0.0, 1.0]])
-	
-	rotationMatrix = rotations()
+	rMatrix = glm.mat4(1)
 	indexes=None
 	
 	def __init__(s):
 		s.VBO= None
-		s.rMatrix = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
-						[0.0, 1.0,0.0,0.0],
-						[0.0, 0.0, 1.0,0.0],
-						[0.0, 0.0, 0.0, 1.0]])
-		s.mWorld = array2GL(GLfloat, [[1.0, 0.0, 0.0, 0.0],
-						[0.0, 1.0,0.0,0.0],
-						[0.0, 0.0, 1.0,0.0],
-						[0.0, 0.0, 0.0, 1.0]])
-		s.mWorld = np.translate
-		
+		s.rMatrix = glm.mat4(1)
+		s.mWorld =  glm.mat4(1)
+		s.mProjection = glm.perspective(45,1.6,0.1,100)
+		s.mView = glm.lookAt(glm.vec3(1,1,1),
+							glm.vec3(0,0,0),
+							glm.vec3(0,1,0))
 	
 	def specialKeys(s,key, x, y):
 		# Сообщаем о необходимости использовать глобального массива pointcolor
 		# Обработчики специальных клавиш
 		if key == GLUT_KEY_UP:  # Клавиша вверх
-			s.rMatrix=rotationMatrix(9,0) # rotate2D(s.rMatrix,15);
+			s.rMatrix=glm.rotate(s.rMatrix,9,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
 		if key == GLUT_KEY_DOWN:  # Клавиша вниз
-			s.rMatrix=rotationMatrix(-9,0) # rotate2D(s.rMatrix,15);
+			s.rMatrix=glm.rotate(s.rMatrix,-9,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
 		if key == GLUT_KEY_LEFT:  # Клавиша влево
-			s.rMatrix = rotationMatrix(0,9)
+			s.rMatrix = glm.rotate(s.rMatrix,9,glm.vec3(0,0,1))
 		if key == GLUT_KEY_RIGHT:  # Клавиша вправо
-			s.rMatrix = rotationMatrix(0,-9)
+			s.rMatrix = glm.rotate(s.rMatrix,-9,glm.vec3(0,0,1))
 		if key == GLUT_KEY_PAGE_DOWN:  # Клавиша вправо
-			s.rMatrix = rotationMatrix(0,0,-9)
+			s.rMatrix = glm.rotate(s.rMatrix,-9,glm.vec3(1,0,0))
 		if key == GLUT_KEY_PAGE_UP:  # Клавиша вправо
-			s.rMatrix = rotationMatrix(0,0,9)
+			s.rMatrix = glm.rotate(s.rMatrix,9,glm.vec3(1,0,0))
 		if key == GLUT_KEY_HOME or key == GLUT_KEY_END:
-			rotationMatrix.phi = 0
-			rotationMatrix.psi = 0
-			rotationMatrix.theta=0
-			s.rMatrix = rotationMatrix(0,0,0)
+			s.rMatrix = glm.mat4(1)
 			print('reset')
 			return 0
 	def keys(s,key, x, y):
