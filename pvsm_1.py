@@ -17,8 +17,8 @@ Attrib_vertex = None;
 ##//! ID юниформ переменной цвета
 VertexColor = None;
 VBO = None;
-IndexArray = None;
-VertexArray = None;
+IndexPointer = None;
+VertexPointer = None;
 vao = None;
 vertex = GLfloat_2 * 3;
 _color = GLfloat_4(1.0, 0.0, 0.0, 1.0);
@@ -160,8 +160,8 @@ def initShader():
 
 def initVBO():
     global VBO;
-    global IndexArray;
-    global VertexArray;
+    global IndexPointer;
+    global VertexPointer;
     global vao;
 
     vao = glGenVertexArrays(1);
@@ -218,8 +218,8 @@ def render():
     global Program;
     global VertexColor;
     global VBO;
-    global VertexArray;
-    global IndexArray;
+    global VertexPointer;
+    global IndexPointer;
     global Attrib_vertex;
     global _color;
     glClear(GL_COLOR_BUFFER_BIT);

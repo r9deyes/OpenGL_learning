@@ -173,6 +173,41 @@ def array2GL(GLtype, array):
 	c1 = len(array[0])
 	return ((GLtype * c1) * c)(*[(GLtype * c1)(*ar) for ar in array])
 
+def lookAt(matrix, eyePosition3D, center3D, upVector3D):
+	matrix2 = np.matrix([[1.0, 0.0, 0.0, 0.0],
+						[0.0, 1.0,0.0,0.0],
+						[0.0, 0.0, 1.0,0.0],
+						[0.0, 0.0, 0.0, 1.0]])
+	
+	forward = np.array(center3D) - np.array(eyePosition3D)
+	
+	forward=normalize(forward)
+	side = np.cross(forward, upVector3D)
+	side=normalize(side)
+	
+	up = np.cross(side, forward)
+	matrix2[0,0], matrix2[1,0], matrix2[2,0], matrix2[3,0] = side[0], side[1], side[2], 0.0
+	matrix2[0,1], matrix2[1,1], matrix2[2,1], matrix2[3,1] = up[0], up[1], up[2], 0.0
+	matrix2[0,2], matrix2[1,2], matrix2[2,2], matrix2[3,2] = -forward[0], -forward[1], -forward[2], 0.0
+	matrix2[0,3] =matrix2[1,3]= matrix2[2,3]= matrix2[3,0] =0.0
+	matrix2[3,3]=1.0
+	
+	matrix2 =  [[side[0], side[1],side[2],-np.dot(side,eyePosition3D)],
+				[up[0], up[1], up[2], -np.dot(up,eyePosition3D)],
+				[-forward[0],-forward[1],-forward[2],-np.dot(forward,eyePosition3D)],
+				[0.0, 0.0, 0.0, 1.0]]
+	
+	return matrix2
+
+def translate(matrix, vector, firstpos=np.array([0,0,0])):
+	res = np.matrix(matrix.copy())
+	for i in range(len(firstpos)):
+		matrix[i,-1] = firstpos[i]
+	return matrix * vector
+	
+def scale(matrix, coef):
+	return matrix * coef
+
 class rotations:
 	phi, psi, theta = 0, 0, 0
 	rMatrix =  None

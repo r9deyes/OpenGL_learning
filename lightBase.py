@@ -19,8 +19,8 @@ Attrib_vertex = None
 ##//! ID юниформ переменной цвета
 VertexColor = None
 VBO = None
-IndexArray = None
-VertexArray = None
+IndexPointer = None
+VertexPointer = None
 vao = None
 vertex = GLfloat_2 * 3
 _color = GLfloat_4(1.0, 0.0, 0.0, 1.0)
@@ -29,13 +29,13 @@ rMatrix = np.array([[1.0, 0.0, 0.0, 0.0],
                     [0.0, 1.0,0.0,0.0],
                     [0.0, 0.0, 1.0,0.0],
                     [0.0, 0.0, 0.0, 1.0]])
-angle = 0
+phi = 0
 #rMatrix[0][0]=1.0
 
 
 
 def rotationMatrix(theta):
-    global angle
+    global phi
     angle = angle + theta
     theta = 0 if angle > 360 else angle
     angle = theta
@@ -59,7 +59,7 @@ def specialKeys(key, x, y):
         rMatrix=rotationMatrix(-15) # rotate2D(rMatrix,15);
         return 0  # (rMatrix, -15);      # Вращаем на -5 градусов по оси X
     if key == GLUT_KEY_LEFT:  # Клавиша влево
-        global angle
+        global phi
         angle = 0
         rMatrix = rotationMatrix(0)
     if key == GLUT_KEY_RIGHT:  # Клавиша вправо
@@ -181,8 +181,8 @@ void main()
 
 def initVBO():
     global VBO
-    global IndexArray
-    global VertexArray
+    global IndexPointer
+    global VertexPointer
     global vao
 
     vao = glGenVertexArrays(1)
@@ -249,8 +249,8 @@ def render():
     global Program
     global VertexColor;
     global VBO
-    global VertexArray
-    global IndexArray
+    global VertexPointer
+    global IndexPointer
     global Attrib_vertex
     global _color
     global RotationMatrix
