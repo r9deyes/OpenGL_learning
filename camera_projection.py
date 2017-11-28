@@ -54,7 +54,7 @@ class main(OpenGL_context):
 		
 		s.VertexPosition 	= getAttribLocation("VertexPosition")
 		s.VertexNormal 		= getAttribLocation("VertexNormal")
-		s.RotationMatrix 	= getAttribLocation('RotationMatrix','uni')
+		#s.RotationMatrix 	= getAttribLocation('RotationMatrix','uni')
 		s.Light 			= LightInfo()
 		s.Light.export(lambda x: getAttribLocation(x,'uni'),'Light')
 		s.Material 			= MaterialInfo()
@@ -94,13 +94,14 @@ class main(OpenGL_context):
 
 		s.indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
 
-		s.normals = (c_float * VERTEX_COUNT)(\
-									*[-0.2, -0.4, 0.5,\
-									1.0, -0.8, 0.5,\
-									0.2, -0.8, 0.5,\
-									0.7, 0.3, 1.0,\
-									0.9, 0.5, 1.0,\
-									0.9, 0.9, 1.0])
+		#ar=[0.0,1.0,0.0]*(VERTEX_COUNT/3)
+		s.normals = (c_float * VERTEX_COUNT)(
+								*[  0.0, 1.0, 0.0,\
+									0.0, 1.0, 0.0,\
+									0.0, 1.0, 0.0,\
+									0.0, 1.0, 0.0,\
+									0.0, 1.0, 0.0,\
+									0.0, 1.0, 0.0])
 
 		#s.colors = grid_colors(*grid)
 
@@ -141,18 +142,18 @@ class main(OpenGL_context):
 		glBindBuffer(GL_ARRAY_BUFFER, s.VertexNormal)
 		glVertexAttribPointer(s.VertexNormal, 3, GL_FLOAT, GL_FALSE, 0, None)
 
-		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
-		glUniformMatrix4fv(s.World, GLint(1), GL_FALSE, s.mWorld)
-		glUniformMatrix4fv(s.View, GLint(1), GL_FALSE, s.mView)
-		glUniformMatrix4fv(s.Projection, GLint(1), GL_FALSE, s.mProjection)
-		glUniformMatrix3fv(s.Normal, 1, GL_FALSE, s.mNormal)
+		#glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
+		glUniformMatrix4fv(s.World, GLint(1), GL_FALSE, s.mWorld.value)
+		glUniformMatrix4fv(s.View, GLint(1), GL_FALSE, s.mView.value)
+		glUniformMatrix4fv(s.Projection, GLint(1), GL_FALSE, s.mProjection.value)
+		glUniformMatrix3fv(s.Normal, 1, GL_FALSE, s.mNormal.value)
 		
-		s.Light.link(s.sLight,1,GL_FALSE)
-		s.Material.link(s.sMaterial,1,GL_FALSE)
+		s.Light.link(s.sLight,1)
+		s.Material.link(s.sMaterial,1)
 		
-		glEnableVertexAttribArray(s.VertexColor)
-		glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
-		glVertexAttribPointer(s.VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
+		#glEnableVertexAttribArray(s.VertexColor)
+		#glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
+		#glVertexAttribPointer(s.VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
 		
 		#glEnable(GL_BLEND);
 		#glBlendFunc();

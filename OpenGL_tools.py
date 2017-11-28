@@ -10,14 +10,19 @@ class glslStruct:
 			s.__dict__[n] = f_export(varName+'.'+n)
 
 	def link(s, value,*args):
-		f='glUniform'
+		f={'1f':glUniform1fv,
+			'2f':glUniform2fv,
+			'3f':glUniform3fv,
+			'4f':glUniform4fv,
+			'1i':glUniform1iv}
 		for n in s.__dict__.keys():
-			if hasattr(n,'__len__'):
-				f=f+len(n)+'fv'
+			if hasattr(s.__dict__[n],'__len__'):
+				f=f+str(len(s.__dict__[n]))+'fv'
 			else:
-				f=f+'1fv'
+				f=f+'1f'
+			print(f,' ',str(s.__dict__[n]))
 			f=getattr(OpenGL.GL, f)
-			f(s.n,args,value.n)
+			#f(s.__dict__[n],*args,value.__dict__[n])
 
 class LightInfo(glslStruct):
 	Position=None
@@ -29,6 +34,15 @@ class LightInfo(glslStruct):
 		s.La = La or GLfloat_3(0.2,0.2,0.2)
 		s.Ld = Ld or GLfloat_3(0.8,0.8,0.8)
 		s.Ls = Ls or GLfloat_3(1.0,1.0,1.0)
+	def link(s,value,*args):
+		ar = [s.Position]+list(args)+[value.Position]
+		glUniform4fv(*ar)
+		ar = [s.La]+list(args)+[value.La]
+		glUniform3fv(*ar)
+		ar = [s.Ld]+list(args)+[value.Ld]
+		glUniform3fv(*ar)
+		ar = [s.Ls]+list(args)+[value.Ls]
+		glUniform3fv(*ar)
 
 class MaterialInfo(glslStruct):
 	shininess=None
@@ -40,7 +54,14 @@ class MaterialInfo(glslStruct):
 		s.Ka = Ka or GLfloat_3(0.2,0.2,0.2)
 		s.Kd = Kd or GLfloat_3(0.8,0.8,0.8)
 		s.Ks = Ks or GLfloat_3(1.0,1.0,1.0)			
-
+	def link(s,value,*args):
+		glUniform1f(s.shininess,value.shininess)
+		ar = [s.Ka]+list(args)+[value.Ka]
+		glUniform3fv(*ar)
+		ar = [s.Kd]+list(args)+[value.Kd]
+		glUniform3fv(*ar)
+		ar = [s.Ks]+list(args)+[value.Ks]
+		glUniform3fv(*ar)
 def landscape(u=2,v=2):
 	def grid_verteces(u=2,v=2):
 		t=(c_float * (v*u*3))()

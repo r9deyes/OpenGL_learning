@@ -38,17 +38,17 @@ class OpenGL_context:
 		# Сообщаем о необходимости использовать глобального массива pointcolor
 		# Обработчики специальных клавиш
 		if key == GLUT_KEY_UP:  # Клавиша вверх
-			s.rMatrix=glm.rotate(s.rMatrix,9,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+			s.rMatrix=glm.rotate(s.rMatrix,0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
 		if key == GLUT_KEY_DOWN:  # Клавиша вниз
-			s.rMatrix=glm.rotate(s.rMatrix,-9,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+			s.rMatrix=glm.rotate(s.rMatrix,-0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
 		if key == GLUT_KEY_LEFT:  # Клавиша влево
-			s.rMatrix = glm.rotate(s.rMatrix,9,glm.vec3(0,0,1))
+			s.rMatrix = glm.rotate(s.rMatrix,0.2,glm.vec3(0,0,1))
 		if key == GLUT_KEY_RIGHT:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,-9,glm.vec3(0,0,1))
+			s.rMatrix = glm.rotate(s.rMatrix,-0.2,glm.vec3(0,0,1))
 		if key == GLUT_KEY_PAGE_DOWN:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,-9,glm.vec3(1,0,0))
+			s.rMatrix = glm.rotate(s.rMatrix,-0.2,glm.vec3(1,0,0))
 		if key == GLUT_KEY_PAGE_UP:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,9,glm.vec3(1,0,0))
+			s.rMatrix = glm.rotate(s.rMatrix,0.2,glm.vec3(1,0,0))
 		if key == GLUT_KEY_HOME or key == GLUT_KEY_END:
 			s.rMatrix = glm.mat4(1)
 			print('reset')
