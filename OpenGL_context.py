@@ -25,10 +25,14 @@ class OpenGL_context:
 		s.VBO= None
 		s.rMatrix = glm.mat4(1)
 		s.mWorld =  glm.mat4(1)
-		s.mProjection = glm.perspective(45,1.6,0.1,100)
+		s.mProjection = glm.perspective(90,1.333,0.1,1.0)
 		s.mView = glm.lookAt(glm.vec3(1,1,1),
 							glm.vec3(0,0,0),
 							glm.vec3(0,1,0))
+		vw = s.mView * s.mWorld
+		s.mNormal = glm.mat3(glm.vec3(vw[0]), glm.vec3(vw[1]), glm.vec3(vw[2]))
+		s.sLight = LightInfo(GLfloat_4(0,1.0,1.0,1.0))
+		s.sMaterial = MaterialInfo()
 	
 	def specialKeys(s,key, x, y):
 		# Сообщаем о необходимости использовать глобального массива pointcolor

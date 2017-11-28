@@ -69,20 +69,23 @@ class main(OpenGL_context):
 	
 	def initVBO(s):
 		s.vao = glGenVertexArrays(1)
-		s.VBO = glGenBuffers(3)
-		s.IndexPointer = s.VBO[0]
-		s.VertexPointer = s.VBO[1]
-		s.ColorPointer = s.VBO[2]
-		glBindBuffer(GL_ARRAY_BUFFER, s.VertexPointer)
+		s.VBO = glGenBuffers(4)
+		s.IndexPointer = glGenBuffers(1)#s.VBO[0]
+		s.VertexPointer = glGenBuffers(1)#s.VBO[1]
+		s.ColorPointer = glGenBuffers(1)#s.VBO[2]
+		s.NormalPointer = glGenBuffers(1)#s.VBO[3]
 	
-		s.vertexes =  (c_float * 18)(*[-0.2, -0.4, 0.5,\
+		VERTEX_COUNT = 18
+		s.vertexes =  (c_float * VERTEX_COUNT)(\
+									*[-0.2, -0.4, 0.5,\
 									-1.0, -0.8, 0.5,\
 									-0.2, -0.8, 0.5,\
 									0.7, 0.3, 1.0,\
 									0.9, 0.5, 1.0,\
 									0.9, 0.9, 1.0])
 
-		s.colors = (c_float * 18)(*[0.5, 0.0, 0.0,\
+		s.colors = (c_float * VERTEX_COUNT)(\
+								*[0.5, 0.0, 0.0,\
 								   0.5, 0.0, 0.0,\
 								   0.5, 0.0, 0.0,\
 								   1.0, 0.5, 0.0,\
@@ -91,6 +94,14 @@ class main(OpenGL_context):
 
 		s.indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
 
+		s.normals = (c_float * VERTEX_COUNT)(\
+									*[-0.2, -0.4, 0.5,\
+									1.0, -0.8, 0.5,\
+									0.2, -0.8, 0.5,\
+									0.7, 0.3, 1.0,\
+									0.9, 0.5, 1.0,\
+									0.9, 0.9, 1.0])
+
 		#s.colors = grid_colors(*grid)
 
 		#s.vertexes, s.indexes, s.colors = hexadron()
@@ -98,47 +109,53 @@ class main(OpenGL_context):
 		#s.vertexes = grid_verteces(*grid)
 
 		#s.indexes = grid_indeces(*grid)
-
+		glBindBuffer(GL_ARRAY_BUFFER, s.VertexPointer)
 		glBufferData(GL_ARRAY_BUFFER, sizeof(s.vertexes), array.array('f',s.vertexes).tostring(), GL_STATIC_DRAW)
 	
 		glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
 		glBufferData(GL_ARRAY_BUFFER, sizeof(s.colors), array.array('f', s.colors).tostring(), GL_STATIC_DRAW)
 		#glVertexAttribPointer(1, 3 , GL_FLOAT, GL_FALSE, 0, None, 0)
-	
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.IndexPointer)
-	
+
+		glBindBuffer(GL_ARRAY_BUFFER, s.NormalPointer)
+		glBufferData(GL_ARRAY_BUFFER, sizeof(s.normals), array.array('f', s.normals).tostring(), GL_STATIC_DRAW)
+		
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.IndexPointer)	
 		s.indexesArray = array.array('B',s.indexes)
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(s.indexes), s.indexesArray.tostring(), GL_STATIC_DRAW)
 		
 		glBindVertexArray(s.vao)
-	
 		glBindBuffer(GL_ARRAY_BUFFER, s.VertexPointer)
-		
-		
+				
 		s.checkOpenGLerror()
-	
-	
 	
 	# //! Отрисовка
 	def render(s):
 		glClear(GL_COLOR_BUFFER_BIT)
 		glUseProgram(s.Program)
-	
-		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
-		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
-		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
-		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
-		
+			
 		glEnableVertexAttribArray(s.VertexPosition)
 		glBindBuffer(GL_ARRAY_BUFFER, s.VertexPointer)
 		glVertexAttribPointer(s.VertexPosition, 3, GL_FLOAT, GL_FALSE, 0, None)
+		
+		glEnableVertexAttribArray(s.VertexNormal)
+		glBindBuffer(GL_ARRAY_BUFFER, s.VertexNormal)
+		glVertexAttribPointer(s.VertexNormal, 3, GL_FLOAT, GL_FALSE, 0, None)
+
+		glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
+		glUniformMatrix4fv(s.World, GLint(1), GL_FALSE, s.mWorld)
+		glUniformMatrix4fv(s.View, GLint(1), GL_FALSE, s.mView)
+		glUniformMatrix4fv(s.Projection, GLint(1), GL_FALSE, s.mProjection)
+		glUniformMatrix3fv(s.Normal, 1, GL_FALSE, s.mNormal)
+		
+		s.Light.link(s.sLight,1,GL_FALSE)
+		s.Material.link(s.sMaterial,1,GL_FALSE)
 		
 		glEnableVertexAttribArray(s.VertexColor)
 		glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
 		glVertexAttribPointer(s.VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
 		
-		glEnable(GL_BLEND);
-		glBlenFunc();
+		#glEnable(GL_BLEND);
+		#glBlendFunc();
 		glDrawElements(GL_TRIANGLES, len(s.indexesArray), GL_UNSIGNED_BYTE, s.indexesArray.tostring())
 		#glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
 		glDisableVertexAttribArray(s.VertexPosition)

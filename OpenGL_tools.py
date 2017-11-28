@@ -2,7 +2,24 @@
 import numpy as np
 from OpenGL.GL import *
 import glm
-class LightInfo:
+
+class glslStruct:
+	
+	def export(s,f_export,varName):
+		for n in s.__dict__.keys():
+			s.__dict__[n] = f_export(varName+'.'+n)
+
+	def link(s, value,*args):
+		f='glUniform'
+		for n in s.__dict__.keys():
+			if hasattr(n,'__len__'):
+				f=f+len(n)+'fv'
+			else:
+				f=f+'1fv'
+			f=getattr(OpenGL.GL, f)
+			f(s.n,args,value.n)
+
+class LightInfo(glslStruct):
 	Position=None
 	La = None
 	Ld = None
@@ -12,14 +29,8 @@ class LightInfo:
 		s.La = La or GLfloat_3(0.2,0.2,0.2)
 		s.Ld = Ld or GLfloat_3(0.8,0.8,0.8)
 		s.Ls = Ls or GLfloat_3(1.0,1.0,1.0)
-	
-	def export(s,f_export,varName):
-		for n in s.__dict__.keys():
-			s.__dict__[n] = f_export(varName+'.'+n)
-			#i=glGetUniformLocation(Program,varName+'.'+n)
-			#glUniform3fv(i,1,s.__dict__[n])
 
-class MaterialInfo:
+class MaterialInfo(glslStruct):
 	shininess=None
 	Ka = None
 	Kd = None
@@ -28,11 +39,7 @@ class MaterialInfo:
 		s.shininess= shininess or GLfloat(1.0)
 		s.Ka = Ka or GLfloat_3(0.2,0.2,0.2)
 		s.Kd = Kd or GLfloat_3(0.8,0.8,0.8)
-		s.Ks = Ks or GLfloat_3(1.0,1.0,1.0)
-	
-	def export(s,f_export,varName):
-		for n in s.__dict__.keys():
-			s.__dict__[n] = f_export(varName+'.'+n)
+		s.Ks = Ks or GLfloat_3(1.0,1.0,1.0)			
 
 def landscape(u=2,v=2):
 	def grid_verteces(u=2,v=2):
