@@ -63,11 +63,11 @@ class main(OpenGL_context):
 		s.View 				= getAttribLocation('View','uni')
 		s.Projection 		= getAttribLocation('Projection','uni')
 		s.Normal 			= getAttribLocation('Normal','uni')
-		
+		s.VertexColor 		= getAttribLocation('VertexColor')
 		s.checkOpenGLerror()
 	
 	
-	def initVBO(s):
+	def initVBO(s,object=None):
 		s.vao = glGenVertexArrays(1)
 		s.VBO = glGenBuffers(4)
 		s.IndexPointer = glGenBuffers(1)#s.VBO[0]
@@ -75,42 +75,58 @@ class main(OpenGL_context):
 		s.ColorPointer = glGenBuffers(1)#s.VBO[2]
 		s.NormalPointer = glGenBuffers(1)#s.VBO[3]
 	
-		VERTEX_COUNT = 18
-		s.vertexes =  (c_float * VERTEX_COUNT)(\
-									*[-0.2, -0.4, 0.5,\
-									-1.0, -0.8, 0.5,\
-									-0.2, -0.8, 0.5,\
-									0.7, 0.3, 1.0,\
-									0.9, 0.5, 1.0,\
-									0.9, 0.9, 1.0])
-
-		s.colors = (c_float * VERTEX_COUNT)(\
-								*[0.5, 0.0, 0.0,\
-								   0.5, 0.0, 0.0,\
-								   0.5, 0.0, 0.0,\
-								   1.0, 0.5, 0.0,\
-								   1.0, 0.5, 0.0,\
-								   1.0, 0.5, 0.0])
-
-		s.indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
-
-		#ar=[0.0,1.0,0.0]*(VERTEX_COUNT/3)
-		s.normals = (c_float * VERTEX_COUNT)(
-								*[  0.0, 1.0, 0.0,\
-									0.0, 1.0, 0.0,\
-									0.0, 1.0, 0.0,\
-									0.0, 1.0, 0.0,\
-									0.0, 1.0, 0.0,\
-									0.0, 1.0, 0.0])
+		#s.vertexes =  (c_float * VERTEX_COUNT)(\
+		#							*[-0.2, -0.4, 0.5,\
+		#							-1.0, -0.8, 0.5,\
+		#							-0.2, -0.8, 0.5,\
+		#							0.7, 0.3, 1.0,\
+		#							0.9, 0.5, 1.0,\
+		#							0.9, 0.9, 1.0])
+        #
+		#ar = [1,1,1] * (VERTEX_COUNT)
+		#						*[0.5, 0.0, 0.0,\
+		#						   0.5, 0.0, 0.0,\
+		#						   0.5, 0.0, 0.0,\
+		#						   1.0, 0.5, 0.0,\
+		#						   1.0, 0.5, 0.0,\
+		#						   1.0, 0.5, 0.0])
+        #
+		#s.indexes = (c_ubyte * 6)(*[0,1,2, 3,4,5])
+        #
+		##ar=[0.0,1.0,0.0]*(VERTEX_COUNT/3)
+		#s.normals = (c_float * VERTEX_COUNT)(
+		#						*[  0.0, 1.0, 0.0,\
+		#							0.0, 1.0, 0.0,\
+		#							0.0, 1.0, 0.0,\
+		#							0.0, 1.0, 0.0,\
+		#							0.0, 1.0, 0.0,\
+		#							0.0, 1.0, 0.0])
 
 		#s.colors = grid_colors(*grid)
 
-		#s.vertexes, s.indexes, s.colors = hexadron()
+		#s.vertexes, s.indexes, s.normals = landscape(4,4)
+		if (object=='cube'):
+			s.vertexes, s.indexes, s.normals = cube()
+		if (object == 'hexadron'):
+			s.vertexes, s.indexes,s.colors, s.normals = hexadron()
+		#s.vertexes, s.indexes, s.normals = load_obj('D:/Users/DAN85_000/Documents/cube.obj')
+		VERTEX_COUNT = len(s.vertexes)
+		_p=0
+		ar = [1,1,1]*(_p)+\
+				[ 1,0,0,
+				0,1,0,
+				0,0,1] + [1,1,1]*(VERTEX_COUNT-_p-3)
+		s.colors = (c_float * (VERTEX_COUNT*3))(*ar)
+
+		print(len(s.normals))
+		#s.normals = [0,1,0]*(VERTEX_COUNT*3)
 		#grid=(10,10)
 		#s.vertexes = grid_verteces(*grid)
-
+		
 		#s.indexes = grid_indeces(*grid)
+		
 		glBindBuffer(GL_ARRAY_BUFFER, s.VertexPointer)
+		#glBufferData(GL_ARRAY_BUFFER, sizeof(s.vertexes), array.array('f',s.vertexes).tostring(), GL_STATIC_DRAW)
 		glBufferData(GL_ARRAY_BUFFER, sizeof(s.vertexes), array.array('f',s.vertexes).tostring(), GL_STATIC_DRAW)
 	
 		glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
@@ -122,6 +138,7 @@ class main(OpenGL_context):
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, s.IndexPointer)	
 		s.indexesArray = array.array('B',s.indexes)
+
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(s.indexes), s.indexesArray.tostring(), GL_STATIC_DRAW)
 		
 		glBindVertexArray(s.vao)
@@ -132,6 +149,7 @@ class main(OpenGL_context):
 	# //! Отрисовка
 	def render(s):
 		glClear(GL_COLOR_BUFFER_BIT)
+		#glEnable(GL_DEPTH_TEST)
 		glUseProgram(s.Program)
 			
 		glEnableVertexAttribArray(s.VertexPosition)
@@ -139,29 +157,34 @@ class main(OpenGL_context):
 		glVertexAttribPointer(s.VertexPosition, 3, GL_FLOAT, GL_FALSE, 0, None)
 		
 		glEnableVertexAttribArray(s.VertexNormal)
-		glBindBuffer(GL_ARRAY_BUFFER, s.VertexNormal)
+		glBindBuffer(GL_ARRAY_BUFFER, s.NormalPointer)
 		glVertexAttribPointer(s.VertexNormal, 3, GL_FLOAT, GL_FALSE, 0, None)
 
+		
 		#glUniformMatrix4fv(s.RotationMatrix, GLint(1), GL_FALSE, s.rMatrix)
+		
 		glUniformMatrix4fv(s.World, GLint(1), GL_FALSE, s.mWorld.value)
 		glUniformMatrix4fv(s.View, GLint(1), GL_FALSE, s.mView.value)
 		glUniformMatrix4fv(s.Projection, GLint(1), GL_FALSE, s.mProjection.value)
-		glUniformMatrix3fv(s.Normal, 1, GL_FALSE, s.mNormal.value)
+		glUniformMatrix3fv(s.Normal, 1, GL_TRUE, s.mNormal.value)
 		
 		s.Light.link(s.sLight,1)
 		s.Material.link(s.sMaterial,1)
 		
-		#glEnableVertexAttribArray(s.VertexColor)
-		#glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
-		#glVertexAttribPointer(s.VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
+		glEnableVertexAttribArray(s.VertexColor)
+		glBindBuffer(GL_ARRAY_BUFFER, s.ColorPointer)
+		glVertexAttribPointer(s.VertexColor, 3, GL_FLOAT, GL_FALSE, 0, None)
 		
 		#glEnable(GL_BLEND);
-		#glBlendFunc();
+		#glBlendFunc(GL_SRC_ALPHA,GL_SRC_ALPHA);
+		
 		glDrawElements(GL_TRIANGLES, len(s.indexesArray), GL_UNSIGNED_BYTE, s.indexesArray.tostring())
 		#glDrawElements(GL_TRIANGLES,GLint(1), GL_UNSIGNED_BYTE, IndexArray)
 		glDisableVertexAttribArray(s.VertexPosition)
-		glDisableVertexAttribArray(s.VertexColor)
-	
+		glDisableVertexAttribArray(s.VertexNormal)
+		
+		#glDisable(GL_BLEND)
+		#glDisable(GL_DEPTH_TEST)
 		glUseProgram(0)
 	
 		s.checkOpenGLerror()

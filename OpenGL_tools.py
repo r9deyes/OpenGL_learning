@@ -62,7 +62,11 @@ class MaterialInfo(glslStruct):
 		glUniform3fv(*ar)
 		ar = [s.Ks]+list(args)+[value.Ks]
 		glUniform3fv(*ar)
-def landscape(u=2,v=2):
+
+def landscape(u=3,v=3):
+	pass
+		
+def grid(u=2,v=2):
 	def grid_verteces(u=2,v=2):
 		t=(c_float * (v*u*3))()
 		for i in range(u):
@@ -122,6 +126,7 @@ def load_obj(filename):
 				continue #/* ignoring this line */
 			line=f.readline()
 		if (len(normals)<len(vertices)):
+			normals=[0]*len(vertices)
 			for i in range(0,len(elements),3):
 				ia = elements[i  ]*3
 				ib = elements[i+1]*3
@@ -129,7 +134,7 @@ def load_obj(filename):
 				normal = normalize(np.cross(\
 				(vertices[ib] - vertices[ia],vertices[ib+1] - vertices[ia+1],vertices[ib+2] - vertices[ia+2]),\
 				(vertices[ic] - vertices[ia],vertices[ic+1] - vertices[ia+1],vertices[ic+2] - vertices[ia+2])))
-				normals[ia] = normals[ib] = normals[ic] = normal
+				normals[ia:ia+3] = normals[ib:ib+3] = normals[ic:ic+3] = normal
 	return vertices, elements, normals
 
 def normalize(v):
@@ -189,8 +194,49 @@ def hexadron():
 			  0.7, 0.7, 1.0,#14
 			  0.7, 0.7, 1.0,#15
 			  0.9, 0.4, 1.0] #16
-	return vertexes, indeces, colors
+	normals=[0]*len(vertexes)
+	for i in range(0,len(indeces)-3,3):
+		ia = indeces[i  ]*3
+		ib = indeces[i+1]*3
+		ic = indeces[i+2]*3
+		normal = normalize(np.cross(\
+		(vertexes[ib] - vertexes[ia],vertexes[ib+1] - vertexes[ia+1],vertexes[ib+2] - vertexes[ia+2]),\
+		(vertexes[ic] - vertexes[ia],vertexes[ic+1] - vertexes[ia+1],vertexes[ic+2] - vertexes[ia+2])))
+		normals[ia:ia+3] = normals[ib:ib+3] = normals[ic:ic+3] = normal
+
+	return vertexes, indeces, colors, normals
 	
+def cube():
+	vertexes = [0.5, 0.5, 0.5, #0
+				0.5, 0.5,-0.5, #1
+				-0.5,0.5,-0.5, #2
+				-0.5,0.5,0.5,  #3
+				0.5, -0.5, 0.5,#4
+				0.5, -0.5,-0.5,#5
+				-0.5,-0.5,-0.5,#6
+				-0.5,-0.5,0.5] #7
+	normals = [ 0.577350258827 , 0.577350258827 , 0.577350258827,
+				0.577350258827 , 0.577350258827 , -0.577350258827,
+				-0.577350258827 , 0.577350258827 , -0.577350258827,
+				-0.577350258827 , 0.577350258827 , 0.577350258827,
+				0.577350258827 ,-0.577350258827 , 0.577350258827,
+				0.577350258827 ,-0.577350258827 , -0.577350258827,
+				-0.577350258827 ,-0.577350258827 , -0.577350258827,
+				-0.577350258827 ,-0.577350258827 , 0.577350258827]
+	indices = [ 0, 1, 2,
+				2, 3, 4,
+				5, 1, 0,
+				0, 4, 5,
+				4, 0, 3,
+				3, 7, 4,
+				7, 3, 6,
+				3, 2, 6,
+				2, 6, 5,
+				2, 1, 5,
+				4, 5, 6,
+				4, 6, 7]
+	return (GLfloat * len(vertexes))(*vertexes), (GLbyte * len(indices))(*indices), (GLfloat *len(normals))(*normals)
+								
 def sizeof(object):
 	#return sys.getsizeof(object)
 	return object.__sizeof__()
@@ -266,4 +312,7 @@ def array2GL(GLtype, array):
 #					[0.0,0.0,0.0,1.0]])
 #		return R
 if __name__=="__main__":
-	pass
+	v,n,i=load_obj('D:/Users/DAN85_000/Documents/cube.obj')
+	print(v)
+	print(n)
+	print(i)

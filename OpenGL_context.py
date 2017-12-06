@@ -20,50 +20,72 @@ class OpenGL_context:
 	indexesArray= None
 	rMatrix = glm.mat4(1)
 	indexes=None
-	
+	cameraPos = glm.vec3(1.0,1.0,1.0)	
 	def __init__(s):
 		s.VBO= None
 		s.rMatrix = glm.mat4(1)
 		s.mWorld =  glm.mat4(1)
-		s.mProjection = glm.perspective(90,1.333,0.1,1.0)
-		s.mView = glm.lookAt(glm.vec3(1,1,1),
+		s.cameraPos = glm.vec3(1.0,1.0,1.0)	
+		s.mWorld = glm.translate(s.mWorld, s.cameraPos)
+		#s.mProjection = glm.perspective(0.7853,1.333,0.001,5.0)
+		s.mProjection = glm.perspectiveFov(45.0,800,600,0.001,100.0)
+		s.mView = glm.lookAt(glm.vec3(5,5,5),
 							glm.vec3(0,0,0),
 							glm.vec3(0,1,0))
 		vw = s.mView * s.mWorld
-		s.mNormal = glm.mat3(glm.vec3(vw[0]), glm.vec3(vw[1]), glm.vec3(vw[2]))
-		s.sLight = LightInfo(GLfloat_4(0,1.0,1.0,1.0))
+		s.mNormal = glm.inverse(glm.mat3(glm.vec3(vw[0]), glm.vec3(vw[1]), glm.vec3(vw[2])))
+		s.sLight = LightInfo(GLfloat_4(0,1.0,0,1.0))
 		s.sMaterial = MaterialInfo()
 	
 	def specialKeys(s,key, x, y):
 		# Сообщаем о необходимости использовать глобального массива pointcolor
 		# Обработчики специальных клавиш
 		if key == GLUT_KEY_UP:  # Клавиша вверх
-			s.rMatrix=glm.rotate(s.rMatrix,0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(0.2,0,0))
+			s.cameraPos[0]+=0.2
 		if key == GLUT_KEY_DOWN:  # Клавиша вниз
-			s.rMatrix=glm.rotate(s.rMatrix,-0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(0,0.2,0))
+			s.cameraPos[1]+=0.2
 		if key == GLUT_KEY_LEFT:  # Клавиша влево
-			s.rMatrix = glm.rotate(s.rMatrix,0.2,glm.vec3(0,0,1))
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(-0.2,0,0))
+			s.cameraPos[0]-=0.2
 		if key == GLUT_KEY_RIGHT:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,-0.2,glm.vec3(0,0,1))
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(0,-0.2,0))
+			s.cameraPos[1]-=0.2
 		if key == GLUT_KEY_PAGE_DOWN:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,-0.2,glm.vec3(1,0,0))
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(0,0,0.2))
+			s.cameraPos[2]+=0.2
 		if key == GLUT_KEY_PAGE_UP:  # Клавиша вправо
-			s.rMatrix = glm.rotate(s.rMatrix,0.2,glm.vec3(1,0,0))
+			s.mWorld = glm.translate(s.mWorld, glm.vec3(0,0,-0.2))
+			s.cameraPos[2]-=0.2
 		if key == GLUT_KEY_HOME or key == GLUT_KEY_END:
-			s.rMatrix = glm.mat4(1)
+			s.cameraPos = glm.vec3(1.0,1.0,1.0)	
+			s.mWorld = glm.translate(glm.mat4(1), s.cameraPos)
 			print('reset')
 			return 0
+
 	def keys(s,key, x, y):
-		if (key == 'i'):
-			return 0
-		if (key == 'j'):
-			return 0
-		if (key == 'k'):
-			return 0
-		if (key == 'l'):
-			return 0
-	
-	
+		if (key == '8'):
+			s.mWorld = glm.rotate(s.mWorld,0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+		if (key == '2'):
+			s.mWorld=glm.rotate(s.mWorld,-0.2,glm.vec3(0,1,0)) # rotate2D(s.rMatrix,15);
+		if (key == '6'):
+			s.mWorld = glm.rotate(s.mWorld,0.2,glm.vec3(0,0,1))
+		if (key == '4'):
+			s.mWorld = glm.rotate(s.mWorld,-0.2,glm.vec3(0,0,1))
+		if (key == '7'):
+			s.mWorld = glm.rotate(s.mWorld,-0.2,glm.vec3(1,0,0))
+		if (key == '9'):
+			s.mWorld = glm.rotate(s.mWorld, 0.2, glm.vec3(1, 0, 0))
+		if (key == '+'):
+			s.mWorld = glm.scale(s.mWorld, glm.vec3(1.2,1.2,1.2))
+			s.cameraPos*=1.2
+		if (key == '-'):
+			s.mWorld = glm.scale(s.mWorld, glm.vec3(0.8,0.8,0.8))
+			s.cameraPos*=0.8
+		if (key == 'q'):
+			exit()
+
 	##//! Функция печати лога шейдера
 	def shaderLog(s,shader):
 		infologLen = c_int(0)
@@ -118,8 +140,9 @@ class OpenGL_context:
 		
 		# //! Инициализация
 		s.initGL()
-		s.initVBO()
+		s.initVBO(object='cube')
 		s.initShader()
+		s.initVBO(object='hexadron')
 		
 		glutReshapeFunc(s.resizeWindow)
 		glutDisplayFunc(s.render)
